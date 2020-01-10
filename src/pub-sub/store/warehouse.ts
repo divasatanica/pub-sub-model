@@ -156,9 +156,13 @@ class WareHouse {
             }
             const order = this.orderQueue.shift();
 
-            this.managerDispatcher.dispatchOrder(order);
-            const orderDispatchedSubject = new Subject(Events.ORDER_DISPATCH_SUCCESS);
-            orderDispatchedSubject.notify(this.getEC(), order);
+            const success = this.managerDispatcher.dispatchOrder(order);
+            if (success) {
+                const orderDispatchedSubject = new Subject(Events.ORDER_DISPATCH_SUCCESS);
+                orderDispatchedSubject.notify(this.getEC(), order);
+            } else {
+                this.orderQueue.unshift(order);
+            }
         });
     }
 
