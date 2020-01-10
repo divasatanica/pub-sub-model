@@ -16,7 +16,6 @@ class WareHouseManager extends Subscriber {
     private boundWareHouse: WareHouse;
     private serving: string;
     private order: IOrder;
-    private finishedItem: { [x: string]: boolean }
     constructor(
         public name: string,
         warehouse: WareHouse
@@ -49,9 +48,7 @@ class WareHouseManager extends Subscriber {
         }
         this.order = order;
         this.serving = order.bound_user;
-        keys.forEach(name => {
-            this.getGoods(name, content[name]);
-        });
+        this.getGoods(order);
     }
 
     finishOrder(id: string, success: boolean, message?: string) {
@@ -60,27 +57,20 @@ class WareHouseManager extends Subscriber {
         orderFinishedSubject.notify(this.boundWareHouse.getEC(), id, message);
         idleSubject.notify(this.boundWareHouse.getEC());
         this.serving = '';
-        this.finishedItem = {};
     }
 
-    getGoods(name: string, count: number) {
-        this.boundWareHouse.getGoods(name, count, this.name);
+    getGoods(order: IOrder) {
+        this.boundWareHouse.getGoods(order, this.name);
     }
 
     private init(warehouse: WareHouse) {
-        this.finishedItem = {};
         this.registerToWarehouse(warehouse);
-        this.subscribe(`${Events.GET_GOODS_SUCCESS}_${this.name}`, this.boundWareHouse.getEC(), (name: string) => {
-            let content = this.order.content;
-            this.finishedItem[name] = true;
-
-            if (Object.keys(content).length === Object.keys(this.finishedItem).length) {
-                console.log('Store: ', this.boundWareHouse.store, this.order.content, '\n');
-                this.finishOrder(this.order.bound_user, true);
-            }
+        this.subscribe(`${Events.GET_GOODS_SUCCESS}_${this.name}`, this.boundWareHouse.getEC(), () => {
+            console.log('Store: ', this.boundWareHouse.store, this.order.content, '\n');
+            this.finishOrder(this.order.bound_user, true);
         });
-        this.subscribe(`${Events.GET_GOODS_FAILED}_${this.name}`, this.boundWareHouse.getEC(), (name: string, message: string) => {
-            this.finishOrder(this.order.bound_user, false, `${name} - ${message}`);
+        this.subscribe(`${Events.GET_GOODS_FAILED}_${this.name}`, this.boundWareHouse.getEC(), (message: string) => {
+            this.finishOrder(this.order.bound_user, false, message);
         });
     }
 }
@@ -174,19 +164,39 @@ class WareHouse {
         this.managerDispatcher.registerManagers(manager);
     }
 
-    async getGoods(name: string, count: number, managerName: string) {
+    async getGoods(order: IOrder, managerName: string) {
+        const goods = Object.keys(order.content);
+        let isStoreValid = true;
+        goods.forEach(name => {
+            const result = this.checkStore(name, order.content[name]);
+
+            if (!result) {
+                isStoreValid = false;
+            }
+        });
+
+        if (!isStoreValid) {
+            const failedSubject = new Subject(`${Events.GET_GOODS_FAILED}_${managerName}`);
+            await sleep(Math.round(Math.random() * 1500 + 1000));
+            failedSubject.notify(this.getEC(), 'Insufficient store');
+        } else {
+            const successSubject = new Subject(`${Events.GET_GOODS_SUCCESS}_${managerName}`);
+            goods.forEach(name => {
+                this.store[name] = this.store[name] - order.content[name];
+            });
+            await sleep(Math.round(Math.random() * 1500 + 1000));
+            successSubject.notify(this.getEC());
+        }
+    }
+
+    checkStore(name: string, count: number) {
         const storeCount = this.store[name];
 
-        if (storeCount >= count) {
-            const successSubject = new Subject(`${Events.GET_GOODS_SUCCESS}_${managerName}`);
-            this.store[name] = this.store[name] - count;
-            await sleep(Math.round(Math.random() * 500 + 1000));
-            successSubject.notify(this.getEC(), name);
-        } else {
-            const failedSubject = new Subject(`${Events.GET_GOODS_FAILED}_${managerName}`);
-            await sleep(Math.round(Math.random() * 500 + 1000));
-            failedSubject.notify(this.getEC(), name, 'Insufficient store');
+        if (!storeCount || storeCount < count) {
+            return false;
         }
+
+        return true;
     }
 }
 
