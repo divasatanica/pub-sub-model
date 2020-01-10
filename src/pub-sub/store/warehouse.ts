@@ -37,6 +37,7 @@ class WareHouseManager extends Subscriber {
         if (this.serving) {
             throw new Error(`Manger (${this.name}) is serving`);
         }
+        console.time(order.bound_user);
         console.log(this.name, 'start order', order, '\n');
         const content = order.content;
         const keys = Object.keys(content);
@@ -177,14 +178,14 @@ class WareHouse {
 
         if (!isStoreValid) {
             const failedSubject = new Subject(`${Events.GET_GOODS_FAILED}_${managerName}`);
-            await sleep(Math.round(Math.random() * 1500 + 1000));
+            await sleep(Math.round(Math.random() * 100 + 50));
             failedSubject.notify(this.getEC(), 'Insufficient store');
         } else {
             const successSubject = new Subject(`${Events.GET_GOODS_SUCCESS}_${managerName}`);
             goods.forEach(name => {
                 this.store[name] = this.store[name] - order.content[name];
             });
-            await sleep(Math.round(Math.random() * 1500 + 1000));
+            await sleep(Math.round(Math.random() * 100 + 50));
             successSubject.notify(this.getEC());
         }
     }

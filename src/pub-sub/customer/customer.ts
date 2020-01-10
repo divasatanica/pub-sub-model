@@ -36,6 +36,7 @@ export default class Customer extends Subscriber {
                 }
                 this.order = null;
                 store.unsubscribe(`${events.ORDER_SUCCESS}_${this.name}`, this);
+                console.timeEnd(this.name);
                 console.log("resolve", this.name);
                 resolve(result);
             });
