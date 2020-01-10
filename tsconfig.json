@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        // ...
+        "noImplicitAny": true,
+        "lib": ["es2017", "dom"],
+        // 添加配置
+        "baseUrl": ".",
+        "paths": {
+        "utils/*": ["../utils/*"],
+        "components/*": ["../components/*"]
+        }
+    },
+    "include": ["./src/*", "./src/**/*"],
+    "exclude": ["node_modules"]
+}

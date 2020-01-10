@@ -1,0 +1,31 @@
+{
+  "name": "reactive",
+  "version": "0.0.1",
+  "description": "A websocket client supports auto reconnect and custom reconnect strategy",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "yarn buildIIFE&&yarn buildESM&&yarn buildCJS",
+    "buildIIFE": "rollup --config build/rollup.config.iife.js",
+    "buildESM": "rollup --config build/rollup.config.esm.js",
+    "buildCJS": "rollup --config build/rollup.config.es5.js",
+    "pack-tar": "git archive -o websocket-client.tar.gz"
+  },
+  "keywords": [
+    "reactive"
+  ],
+  "types": "./src/typings/index.d.ts",
+  "author": "coma",
+  "license": "ISC",
+  "devDependencies": {
+    "rollup": "^1.13.1",
+    "rollup-plugin-typescript2": "^0.21.1",
+    "tslib": "^1.9.3",
+    "typescript": "^3.5.1"
+  },
+  "dependencies": {
+    "tapable": "^2.0.0-beta.3",
+    "ts-node": "^8.5.4"
+  }
+}
